@@ -1,98 +1,182 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * Library Screen (Premium)
+ * Minimalist entry point with masonry layout feel
+ */
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+import { theme } from '@/constants/theme';
+import { Layout } from '@/components/ui/Layout';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { DocumentCard } from '@/components/file/DocumentCard';
+import { Button } from '@/components/ui/Button';
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+import { createDocument } from '@/services/document-parser';
+import { getDocuments, saveDocument, deleteDocument, getAllProgress } from '@/services/storage';
+import type { Document, ReadingProgress } from '@/types';
+
+export default function LibraryScreen() {
+    const [documents, setDocuments] = useState<Document[]>([]);
+    const [progress, setProgress] = useState<Record<string, ReadingProgress>>({});
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        const docs = await getDocuments();
+        const prog = await getAllProgress();
+        setDocuments(docs);
+        setProgress(prog);
+    };
+
+    const handlePickDocument = async () => {
+        setIsLoading(true);
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ['text/plain'],
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets?.[0]) {
+                const file = result.assets[0];
+                const doc = await createDocument(file.uri, file.name);
+                await saveDocument(doc);
+                setDocuments(prev => [doc, ...prev]);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Layout>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={false} onRefresh={loadData} />
+                }
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={styles.title}>Library</Text>
+                    <Text style={styles.subtitle}>
+                        {documents.length} {documents.length === 1 ? 'Book' : 'Books'}
+                    </Text>
+                </View>
+
+                {/* Add New - Featured Card */}
+                <GlassCard
+                    onPress={handlePickDocument}
+                    style={styles.addCard}
+                >
+                    <View style={styles.addContent}>
+                        <View style={styles.addIcon}>
+                            <Ionicons name="add" size={32} color={theme.colors.surface} />
+                        </View>
+                        <View>
+                            <Text style={styles.addTitle}>Import Book</Text>
+                            <Text style={styles.addSubtitle}>Support for .txt files</Text>
+                        </View>
+                    </View>
+                </GlassCard>
+
+                {/* Document List */}
+                <View style={styles.list}>
+                    {documents.map(doc => (
+                        <DocumentCard
+                            key={doc.id}
+                            document={doc}
+                            progress={progress[doc.id]}
+                            onPress={(d) => router.push({ pathname: '/(tabs)/reader', params: { documentId: d.id } })}
+                            onDelete={async (id) => {
+                                await deleteDocument(id);
+                                loadData();
+                            }}
+                        />
+                    ))}
+                </View>
+
+                {/* Empty State */}
+                {documents.length === 0 && (
+                    <View style={styles.empty}>
+                        <Text style={styles.emptyText}>Your library is empty.</Text>
+                        <Text style={styles.emptySub}>Import a document to begin.</Text>
+                    </View>
+                )}
+            </ScrollView>
+        </Layout>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    scrollContent: {
+        paddingBottom: 100,
+    },
+    header: {
+        marginTop: theme.spacing.xl,
+        marginBottom: theme.spacing.l,
+    },
+    title: {
+        fontSize: theme.typography.sizes.h1,
+        fontWeight: '700', // Manually setting weight string to avoid TS issues
+        color: theme.colors.text,
+        letterSpacing: -1,
+    },
+    subtitle: {
+        fontSize: theme.typography.sizes.body,
+        color: theme.colors.textSecondary,
+        marginTop: 4,
+    },
+    addCard: {
+        backgroundColor: theme.colors.primary,
+        marginBottom: theme.spacing.xl,
+    },
+    addContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    addIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: theme.spacing.m,
+    },
+    addTitle: {
+        color: theme.colors.surface,
+        fontSize: theme.typography.sizes.h3,
+        fontWeight: '600',
+    },
+    addSubtitle: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: theme.typography.sizes.small,
+    },
+    list: {
+        gap: theme.spacing.s,
+    },
+    empty: {
+        marginTop: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: theme.typography.sizes.body,
+        color: theme.colors.textSecondary,
+        fontWeight: '500',
+    },
+    emptySub: {
+        fontSize: theme.typography.sizes.small,
+        color: theme.colors.textMuted,
+        marginTop: 4,
+    },
 });
