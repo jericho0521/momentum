@@ -23,3 +23,11 @@ export interface ReaderSettings {
     highlightEnabled: boolean;
     focusPointEnabled: boolean;
 }
+
+export interface Bookmark {
+    id: string;
+    documentId: string;
+    wordIndex: number;
+    label?: string;
+    createdAt: number;
+}

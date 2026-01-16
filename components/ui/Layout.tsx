@@ -1,12 +1,12 @@
 /**
  * Layout Component
- * Main screen wrapper with consistent background and padding
+ * Main screen wrapper with dynamic theme support
  */
 
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -15,8 +15,13 @@ interface LayoutProps {
 }
 
 export function Layout({ children, style, noPadding = false }: LayoutProps) {
+    const { theme } = useTheme();
+
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView
+            style={[styles.container, { backgroundColor: theme.colors.background }]}
+            edges={['top']}
+        >
             <View style={[styles.content, noPadding ? null : styles.padding, style]}>
                 {children}
             </View>
@@ -27,12 +32,11 @@ export function Layout({ children, style, noPadding = false }: LayoutProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
     },
     content: {
         flex: 1,
     },
     padding: {
-        paddingHorizontal: theme.spacing.m,
+        paddingHorizontal: 16,
     },
 });

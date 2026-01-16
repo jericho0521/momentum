@@ -1,13 +1,13 @@
 /**
  * ZenControls Component
- * Minimalist playback controls for the reader
+ * Minimalist playback controls with bookmark support
  */
 
 import React from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ZenControlsProps {
     isPlaying: boolean;
@@ -16,6 +16,8 @@ interface ZenControlsProps {
     progress: number;
     timeRemaining?: string;
     onSettingsPress?: () => void;
+    onBookmarkPress?: () => void;
+    hasBookmarkAtPosition?: boolean;
 }
 
 export function ZenControls({
@@ -25,35 +27,56 @@ export function ZenControls({
     progress,
     timeRemaining,
     onSettingsPress,
+    onBookmarkPress,
+    hasBookmarkAtPosition = false,
 }: ZenControlsProps) {
+    const { theme } = useTheme();
 
     const handlePlayPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onTogglePlay();
     };
 
+    const handleBookmarkPress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onBookmarkPress?.();
+    };
+
     return (
         <View style={styles.container}>
             {/* Progress Bar */}
-            <View style={styles.progressContainer}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            <View style={[styles.progressContainer, { backgroundColor: theme.colors.border }]}>
+                <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: theme.colors.primary }]} />
             </View>
 
             {/* Control Bar */}
-            <View style={styles.controlBar}>
+            <View style={[styles.controlBar, {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+            }]}>
                 {/* Stats */}
                 <View style={styles.stats}>
-                    <Text style={styles.statText}>{wpm} wpm</Text>
+                    <Text style={[styles.statText, { color: theme.colors.text }]}>{wpm} wpm</Text>
                     {timeRemaining && (
-                        <Text style={styles.statSub}>{timeRemaining} left</Text>
+                        <Text style={[styles.statSub, { color: theme.colors.textMuted }]}>{timeRemaining} left</Text>
                     )}
                 </View>
+
+                {/* Bookmark Button */}
+                <Pressable onPress={handleBookmarkPress} style={styles.sideButton}>
+                    <Ionicons
+                        name={hasBookmarkAtPosition ? 'bookmark' : 'bookmark-outline'}
+                        size={20}
+                        color={hasBookmarkAtPosition ? theme.colors.primary : theme.colors.textSecondary}
+                    />
+                </Pressable>
 
                 {/* Play/Pause Button */}
                 <Pressable
                     onPress={handlePlayPress}
                     style={({ pressed }) => [
                         styles.playButton,
+                        { backgroundColor: theme.colors.primary },
                         pressed && styles.playButtonPressed,
                     ]}
                 >
@@ -65,16 +88,16 @@ export function ZenControls({
                 </Pressable>
 
                 {/* Settings Button */}
-                <Pressable
-                    onPress={onSettingsPress}
-                    style={styles.settingsButton}
-                >
+                <Pressable onPress={onSettingsPress} style={styles.sideButton}>
                     <Ionicons
                         name="settings-outline"
                         size={20}
                         color={theme.colors.textSecondary}
                     />
                 </Pressable>
+
+                {/* Spacer for symmetry */}
+                <View style={styles.stats} />
             </View>
         </View>
     );
@@ -83,61 +106,54 @@ export function ZenControls({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: 32,
     },
     progressContainer: {
         height: 4,
-        backgroundColor: theme.colors.border,
         width: '100%',
-        marginBottom: theme.spacing.m,
+        marginBottom: 16,
     },
     progressFill: {
         height: '100%',
-        backgroundColor: theme.colors.primary,
     },
     controlBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: theme.spacing.m,
-        paddingHorizontal: theme.spacing.l,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.l,
-        marginHorizontal: theme.spacing.m,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 24,
+        marginHorizontal: 16,
         borderWidth: 1,
-        borderColor: theme.colors.border,
     },
     stats: {
-        minWidth: 80,
+        minWidth: 60,
     },
     statText: {
-        fontSize: theme.typography.sizes.caption,
+        fontSize: 14,
         fontWeight: '600',
-        color: theme.colors.text,
     },
     statSub: {
         fontSize: 10,
-        color: theme.colors.textMuted,
+    },
+    sideButton: {
+        padding: 8,
     },
     playButton: {
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: theme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: -40,
-        shadowColor: theme.colors.primary,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 12,
         elevation: 8,
     },
     playButtonPressed: {
         transform: [{ scale: 0.95 }],
         opacity: 0.9,
-    },
-    settingsButton: {
-        padding: theme.spacing.s,
     },
 });

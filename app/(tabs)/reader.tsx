@@ -1,25 +1,26 @@
 /**
  * Reader Screen (Premium)
- * Distraction-free reading environment connected to real logic
+ * With bookmark support and dark mode
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, StatusBar, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, Stack, router, useFocusEffect } from 'expo-router';
-import { theme } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
+import { useTheme } from '@/hooks/useTheme';
 import { Layout } from '@/components/ui/Layout';
 import { ZenWord } from '@/components/reader/ZenWord';
 import { ZenControls } from '@/components/reader/ZenControls';
 import { ContextPreview } from '@/components/reader/ContextPreview';
 import { useSpeedReader } from '@/hooks/useSpeedReader';
-import { getDocument, getSettings } from '@/services/storage';
-import type { Document, ReaderSettings } from '@/types';
+import { getDocument, getSettings, getBookmarks, saveBookmark, deleteBookmark } from '@/services/storage';
+import type { Document, ReaderSettings, Bookmark } from '@/types';
 
 export default function ReaderScreen() {
     const { documentId } = useLocalSearchParams<{ documentId: string }>();
     const [document, setDocument] = useState<Document | null>(null);
-    const [initialSettings, setInitialSettings] = useState<ReaderSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { theme, isDark } = useTheme();
 
     useEffect(() => {
         const loadData = async () => {
@@ -27,12 +28,8 @@ export default function ReaderScreen() {
                 setIsLoading(false);
                 return;
             }
-            const [doc, loadedSettings] = await Promise.all([
-                getDocument(documentId),
-                getSettings(),
-            ]);
+            const doc = await getDocument(documentId);
             setDocument(doc);
-            setInitialSettings(loadedSettings);
             setIsLoading(false);
         };
         loadData();
@@ -50,8 +47,10 @@ export default function ReaderScreen() {
         return (
             <Layout style={styles.centered}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <Text style={styles.emptyTitle}>No Document Selected</Text>
-                <Text style={styles.emptyText}>Go to Library and select a document to start reading</Text>
+                <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Document Selected</Text>
+                <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                    Go to Library and select a document to start reading
+                </Text>
             </Layout>
         );
     }
@@ -60,6 +59,9 @@ export default function ReaderScreen() {
 }
 
 function ReaderContent({ document }: { document: Document }) {
+    const { theme, isDark } = useTheme();
+    const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
     const {
         currentWord,
         currentIndex,
@@ -75,22 +77,49 @@ function ReaderContent({ document }: { document: Document }) {
         onComplete: () => { },
     });
 
-    // Reload settings when screen becomes active
+    // Reload settings and bookmarks when screen becomes active
     useFocusEffect(
         useCallback(() => {
             reloadSettings();
+            loadBookmarks();
         }, [reloadSettings])
     );
 
+    const loadBookmarks = async () => {
+        const marks = await getBookmarks(document.id);
+        setBookmarks(marks);
+    };
+
+    const handleBookmarkPress = async () => {
+        const existingBookmark = bookmarks.find(b => b.wordIndex === currentIndex);
+
+        if (existingBookmark) {
+            await deleteBookmark(document.id, existingBookmark.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } else {
+            const newBookmark: Bookmark = {
+                id: `bm_${Date.now()}`,
+                documentId: document.id,
+                wordIndex: currentIndex,
+                createdAt: Date.now(),
+            };
+            await saveBookmark(newBookmark);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
+        await loadBookmarks();
+    };
+
+    const hasBookmarkAtPosition = bookmarks.some(b => b.wordIndex === currentIndex);
     const wpm = settings?.wpm ?? 300;
 
     return (
-        <Layout style={styles.container} noPadding>
+        <Layout style={{ backgroundColor: theme.colors.background }} noPadding>
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
             <View style={[styles.topBar, { opacity: isPlaying ? 0.3 : 1 }]}>
-                <Text style={styles.docTitle} numberOfLines={1}>
+                <Text style={[styles.docTitle, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                     {document.name}
                 </Text>
             </View>
@@ -102,7 +131,6 @@ function ReaderContent({ document }: { document: Document }) {
                 />
             </View>
 
-            {/* Context Preview - zoomed out view */}
             <ContextPreview
                 content={document.content!}
                 currentIndex={currentIndex}
@@ -117,6 +145,8 @@ function ReaderContent({ document }: { document: Document }) {
                     progress={percentage}
                     timeRemaining={timeRemaining}
                     onSettingsPress={() => router.push('/(tabs)/settings')}
+                    onBookmarkPress={handleBookmarkPress}
+                    hasBookmarkAtPosition={hasBookmarkAtPosition}
                 />
             </View>
         </Layout>
@@ -124,24 +154,20 @@ function ReaderContent({ document }: { document: Document }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: theme.colors.background,
-    },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: theme.spacing.xl,
+        padding: 32,
     },
     topBar: {
-        paddingTop: theme.spacing.m,
-        paddingHorizontal: theme.spacing.l,
+        paddingTop: 16,
+        paddingHorizontal: 24,
         alignItems: 'center',
         height: 60,
     },
     docTitle: {
-        fontSize: theme.typography.sizes.caption,
-        color: theme.colors.textSecondary,
+        fontSize: 14,
         fontWeight: '500',
         letterSpacing: 1,
         textTransform: 'uppercase',
@@ -152,17 +178,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     controlsArea: {
-        paddingHorizontal: theme.spacing.m,
+        paddingHorizontal: 16,
     },
     emptyTitle: {
-        fontSize: theme.typography.sizes.h2,
+        fontSize: 24,
         fontWeight: '600',
-        color: theme.colors.text,
-        marginBottom: theme.spacing.s,
+        marginBottom: 8,
     },
     emptyText: {
-        fontSize: theme.typography.sizes.body,
-        color: theme.colors.textSecondary,
+        fontSize: 16,
         textAlign: 'center',
     },
 });
