@@ -140,7 +140,7 @@ export default function SettingsScreen() {
                     />
                     <View style={[styles.previewBox, { backgroundColor: theme.colors.background }]}>
                         <Text style={[styles.previewText, { fontSize: settings.fontSize, color: theme.colors.text }]}>
-                            Zen Reader
+                            Momentum
                         </Text>
                     </View>
                 </GlassCard>
@@ -186,7 +186,7 @@ export default function SettingsScreen() {
                     />
                 </GlassCard>
 
-                <Text style={[styles.version, { color: theme.colors.textMuted }]}>SpeedReader v2.1 (Zen)</Text>
+                <Text style={[styles.version, { color: theme.colors.textMuted }]}>Momentum v1.0</Text>
             </ScrollView>
         </Layout>
     );

@@ -40,7 +40,7 @@ export default function LibraryScreen() {
         setIsLoading(true);
         try {
             const result = await DocumentPicker.getDocumentAsync({
-                type: ['text/plain'],
+                type: ['text/plain', 'application/pdf', 'application/epub+zip'],
                 copyToCacheDirectory: true,
             });
 
@@ -88,17 +88,17 @@ export default function LibraryScreen() {
                 {/* Add New - Featured Card */}
                 <GlassCard
                     onPress={handlePickDocument}
-                    style={[styles.addCard, { backgroundColor: theme.colors.primary }]}
+                    style={{ marginBottom: 32, backgroundColor: isDark ? '#1E3A5F' : '#1F2937' } as any}
                 >
                     <View style={styles.addContent}>
                         <View style={styles.addIcon}>
-                            <Ionicons name="add" size={32} color={isDark ? theme.colors.primary : '#FFFFFF'} />
+                            <Ionicons name="add" size={32} color="#FFFFFF" />
                         </View>
                         <View>
-                            <Text style={[styles.addTitle, { color: isDark ? theme.colors.primary : '#FFFFFF' }]}>
+                            <Text style={[styles.addTitle, { color: '#FFFFFF' }]}>
                                 Import Book
                             </Text>
-                            <Text style={styles.addSubtitle}>Support for .txt files</Text>
+                            <Text style={styles.addSubtitle}>Support for .txt, .pdf and .epub files</Text>
                         </View>
                     </View>
                 </GlassCard>
