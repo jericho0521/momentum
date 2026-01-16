@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -36,6 +36,7 @@ export default function LibraryScreen() {
     };
 
     const handlePickDocument = async () => {
+        console.log('Starting document picker...');
         setIsLoading(true);
         try {
             const result = await DocumentPicker.getDocumentAsync({
@@ -43,14 +44,25 @@ export default function LibraryScreen() {
                 copyToCacheDirectory: true,
             });
 
+            console.log('Document picker result:', result);
+
             if (!result.canceled && result.assets?.[0]) {
                 const file = result.assets[0];
+                console.log('Selected file:', file.name, file.uri);
+
                 const doc = await createDocument(file.uri, file.name);
+                console.log('Created document:', doc.id, doc.wordCount, 'words');
+
                 await saveDocument(doc);
                 setDocuments(prev => [doc, ...prev]);
+
+                Alert.alert('Success', `Imported "${doc.name}" (${doc.wordCount} words)`);
+            } else {
+                console.log('User canceled or no assets');
             }
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            console.error('Import error:', e);
+            Alert.alert('Import Error', e.message || 'Failed to import document');
         } finally {
             setIsLoading(false);
         }
