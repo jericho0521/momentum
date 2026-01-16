@@ -1,6 +1,6 @@
 /**
  * Tab Layout (Premium)
- * Minimalist navigation bar
+ * Minimalist navigation with dark mode support
  */
 
 import React from 'react';
@@ -8,9 +8,11 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function TabLayout() {
+    const { theme } = useTheme();
+
     return (
         <Tabs
             screenOptions={{
@@ -43,7 +45,6 @@ export default function TabLayout() {
                 }}
             />
 
-            {/* Reader Tab (Could handle hiding logic here) */}
             <Tabs.Screen
                 name="reader"
                 options={{

@@ -1,6 +1,6 @@
 /**
  * Library Screen (Premium)
- * Minimalist entry point with masonry layout feel
+ * With dark mode support
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,17 +9,17 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Layout } from '@/components/ui/Layout';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { DocumentCard } from '@/components/file/DocumentCard';
-import { Button } from '@/components/ui/Button';
 
 import { createDocument } from '@/services/document-parser';
 import { getDocuments, saveDocument, deleteDocument, getAllProgress } from '@/services/storage';
 import type { Document, ReadingProgress } from '@/types';
 
 export default function LibraryScreen() {
+    const { theme, isDark } = useTheme();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [progress, setProgress] = useState<Record<string, ReadingProgress>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -79,8 +79,8 @@ export default function LibraryScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Library</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: theme.colors.text }]}>Library</Text>
+                    <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
                         {documents.length} {documents.length === 1 ? 'Book' : 'Books'}
                     </Text>
                 </View>
@@ -88,14 +88,16 @@ export default function LibraryScreen() {
                 {/* Add New - Featured Card */}
                 <GlassCard
                     onPress={handlePickDocument}
-                    style={styles.addCard}
+                    style={[styles.addCard, { backgroundColor: theme.colors.primary }]}
                 >
                     <View style={styles.addContent}>
                         <View style={styles.addIcon}>
-                            <Ionicons name="add" size={32} color={theme.colors.surface} />
+                            <Ionicons name="add" size={32} color={isDark ? theme.colors.primary : '#FFFFFF'} />
                         </View>
                         <View>
-                            <Text style={styles.addTitle}>Import Book</Text>
+                            <Text style={[styles.addTitle, { color: isDark ? theme.colors.primary : '#FFFFFF' }]}>
+                                Import Book
+                            </Text>
                             <Text style={styles.addSubtitle}>Support for .txt files</Text>
                         </View>
                     </View>
@@ -120,8 +122,12 @@ export default function LibraryScreen() {
                 {/* Empty State */}
                 {documents.length === 0 && (
                     <View style={styles.empty}>
-                        <Text style={styles.emptyText}>Your library is empty.</Text>
-                        <Text style={styles.emptySub}>Import a document to begin.</Text>
+                        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                            Your library is empty.
+                        </Text>
+                        <Text style={[styles.emptySub, { color: theme.colors.textMuted }]}>
+                            Import a document to begin.
+                        </Text>
                     </View>
                 )}
             </ScrollView>
@@ -134,23 +140,20 @@ const styles = StyleSheet.create({
         paddingBottom: 100,
     },
     header: {
-        marginTop: theme.spacing.xl,
-        marginBottom: theme.spacing.l,
+        marginTop: 32,
+        marginBottom: 24,
     },
     title: {
-        fontSize: theme.typography.sizes.h1,
-        fontWeight: '700', // Manually setting weight string to avoid TS issues
-        color: theme.colors.text,
+        fontSize: 32,
+        fontWeight: '700',
         letterSpacing: -1,
     },
     subtitle: {
-        fontSize: theme.typography.sizes.body,
-        color: theme.colors.textSecondary,
+        fontSize: 16,
         marginTop: 4,
     },
     addCard: {
-        backgroundColor: theme.colors.primary,
-        marginBottom: theme.spacing.xl,
+        marginBottom: 32,
     },
     addContent: {
         flexDirection: 'row',
@@ -163,32 +166,29 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: theme.spacing.m,
+        marginRight: 16,
     },
     addTitle: {
-        color: theme.colors.surface,
-        fontSize: theme.typography.sizes.h3,
+        fontSize: 20,
         fontWeight: '600',
     },
     addSubtitle: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: theme.typography.sizes.small,
+        fontSize: 12,
     },
     list: {
-        gap: theme.spacing.s,
+        gap: 8,
     },
     empty: {
-        marginTop: theme.spacing.xl,
+        marginTop: 32,
         alignItems: 'center',
     },
     emptyText: {
-        fontSize: theme.typography.sizes.body,
-        color: theme.colors.textSecondary,
+        fontSize: 16,
         fontWeight: '500',
     },
     emptySub: {
-        fontSize: theme.typography.sizes.small,
-        color: theme.colors.textMuted,
+        fontSize: 12,
         marginTop: 4,
     },
 });

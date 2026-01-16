@@ -1,26 +1,52 @@
+/**
+ * Theme System with Dark Mode Support
+ */
 
 import { Platform } from 'react-native';
 
-export const palette = {
-  // Base
+// ============ Palette Type ============
+
+interface Palette {
+  offWhite: string;
+  white: string;
+  ink900: string;
+  ink700: string;
+  ink400: string;
+  accent: string;
+  accentSubtle: string;
+  error: string;
+  success: string;
+}
+
+// ============ Palettes ============
+
+export const lightPalette: Palette = {
   offWhite: '#F9FAFB',
   white: '#FFFFFF',
-
-  // Ink (Text)
-  ink900: '#111827', // Primary
-  ink700: '#374151', // Secondary
-  ink400: '#9CA3AF', // Muted / Placeholders
-
-  // Accents (Deep Charcoal)
+  ink900: '#111827',
+  ink700: '#374151',
+  ink400: '#9CA3AF',
   accent: '#1F2937',
   accentSubtle: '#E5E7EB',
-
-  // Status
   error: '#EF4444',
   success: '#10B981',
-} as const;
+};
 
-export const theme = {
+export const darkPalette: Palette = {
+  offWhite: '#111827',
+  white: '#1F2937',
+  ink900: '#F9FAFB',
+  ink700: '#E5E7EB',
+  ink400: '#9CA3AF',
+  accent: '#F9FAFB',
+  accentSubtle: '#374151',
+  error: '#F87171',
+  success: '#34D399',
+};
+
+// ============ Create Theme from Palette ============
+
+const createTheme = (palette: typeof lightPalette) => ({
   colors: {
     background: palette.offWhite,
     surface: palette.white,
@@ -29,6 +55,8 @@ export const theme = {
     textMuted: palette.ink400,
     border: palette.accentSubtle,
     primary: palette.accent,
+    error: palette.error,
+    success: palette.success,
   },
   typography: {
     fontFamily: Platform.select({
@@ -45,10 +73,10 @@ export const theme = {
       small: 12,
     },
     weights: {
-      regular: '400',
-      medium: '500',
-      semibold: '600',
-      bold: '700',
+      regular: '400' as const,
+      medium: '500' as const,
+      semibold: '600' as const,
+      bold: '700' as const,
     },
     letterSpacing: {
       tight: -0.5,
@@ -57,7 +85,6 @@ export const theme = {
     },
   },
   shadows: {
-    // Soft, diffuse shadow for elevation
     soft: {
       ...Platform.select({
         ios: {
@@ -66,15 +93,10 @@ export const theme = {
           shadowOpacity: 0.04,
           shadowRadius: 12,
         },
-        android: {
-          elevation: 3,
-        },
-        web: {
-          boxShadow: '0 4px 12px rgba(17, 24, 39, 0.04)',
-        },
+        android: { elevation: 3 },
+        web: { boxShadow: '0 4px 12px rgba(17, 24, 39, 0.04)' },
       }),
     },
-    // Stronger shadow for floating elements
     floating: {
       ...Platform.select({
         ios: {
@@ -83,12 +105,8 @@ export const theme = {
           shadowOpacity: 0.08,
           shadowRadius: 16,
         },
-        android: {
-          elevation: 8,
-        },
-        web: {
-          boxShadow: '0 8px 16px rgba(17, 24, 39, 0.08)',
-        },
+        android: { elevation: 8 },
+        web: { boxShadow: '0 8px 16px rgba(17, 24, 39, 0.08)' },
       }),
     },
   },
@@ -106,7 +124,17 @@ export const theme = {
     l: 24,
     full: 9999,
   },
-} as const;
+});
+
+// ============ Export Themes ============
+
+export const lightTheme = createTheme(lightPalette);
+export const darkTheme = createTheme(darkPalette);
+
+// Default theme (light) for backward compatibility
+export const theme = lightTheme;
+export const palette = lightPalette;
 
 // Types
-export type Theme = typeof theme;
+export type Theme = typeof lightTheme;
+export type ThemeMode = 'light' | 'dark' | 'system';

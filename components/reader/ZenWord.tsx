@@ -1,13 +1,12 @@
 /**
  * ZenWord Component
  * Displays the current word with optimal focus point highlighting (ORP)
- * Features large typography and smooth transitions
  */
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ZenWordProps {
     word: string;
@@ -15,9 +14,8 @@ interface ZenWordProps {
 }
 
 export function ZenWord({ word, isFocusEnabled = true }: ZenWordProps) {
-    // Simple ORP calculation
-    // For words length 0-1: no pivot
-    // For words > 1: roughly 25-30% into the word
+    const { theme } = useTheme();
+
     const getPivotIndex = (w: string) => {
         const len = w.length;
         if (len <= 1) return 0;
@@ -35,25 +33,29 @@ export function ZenWord({ word, isFocusEnabled = true }: ZenWordProps) {
     return (
         <View style={styles.container}>
             <Animated.View
-                key={word} // Triggers animation on change
+                key={word}
                 entering={FadeIn.duration(50)}
                 style={styles.wordRow}
             >
-                <Text style={[styles.text, styles.leftText]}>{leftPart}</Text>
+                <Text style={[styles.text, styles.leftText, { color: theme.colors.text }]}>
+                    {leftPart}
+                </Text>
                 <Text style={[
                     styles.text,
-                    isFocusEnabled ? styles.pivotHighlight : null
+                    { color: isFocusEnabled ? theme.colors.error : theme.colors.text },
+                    isFocusEnabled && styles.pivotBold
                 ]}>
                     {pivotChar}
                 </Text>
-                <Text style={[styles.text, styles.rightText]}>{rightPart}</Text>
+                <Text style={[styles.text, styles.rightText, { color: theme.colors.text }]}>
+                    {rightPart}
+                </Text>
             </Animated.View>
 
-            {/* Focus Guides (Optional visual aid) */}
             {isFocusEnabled && (
                 <View style={styles.focusNotchWrap}>
-                    <View style={styles.focusNotch} />
-                    <View style={[styles.focusNotch, styles.focusNotchBottom]} />
+                    <View style={[styles.focusNotch, { backgroundColor: theme.colors.border }]} />
+                    <View style={[styles.focusNotch, { backgroundColor: theme.colors.border }]} />
                 </View>
             )}
         </View>
@@ -64,17 +66,16 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 200, // Fixed height to prevent layout shifts
+        height: 200,
     },
     wordRow: {
         flexDirection: 'row',
-        alignItems: 'baseline', // Align by text baseline
+        alignItems: 'baseline',
     },
     text: {
-        fontSize: 48, // theme.typography.sizes.xxl equivalent
+        fontSize: 48,
         fontWeight: '600',
-        color: theme.colors.text,
-        fontVariant: ['tabular-nums'], // Helps with number stability
+        fontVariant: ['tabular-nums'],
         letterSpacing: -0.5,
     },
     leftText: {
@@ -83,8 +84,7 @@ const styles = StyleSheet.create({
     rightText: {
         textAlign: 'left',
     },
-    pivotHighlight: {
-        color: theme.colors.error, // Red highlight
+    pivotBold: {
         fontWeight: '700',
     },
     focusNotchWrap: {
@@ -98,10 +98,6 @@ const styles = StyleSheet.create({
     focusNotch: {
         width: 2,
         height: 12,
-        backgroundColor: theme.colors.border,
         opacity: 0.5,
-    },
-    focusNotchBottom: {
-        backgroundColor: theme.colors.border,
     },
 });

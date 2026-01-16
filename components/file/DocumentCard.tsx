@@ -1,12 +1,12 @@
 /**
  * DocumentCard Component (Premium)
- * Minimalist document item using GlassCard
+ * Minimalist document item with dark mode support
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { GlassCard } from '@/components/ui/GlassCard';
 import type { Document, ReadingProgress } from '@/types';
 
@@ -23,6 +23,8 @@ export function DocumentCard({
     onPress,
     onDelete,
 }: DocumentCardProps) {
+    const { theme } = useTheme();
+
     const progressPercentage = progress
         ? Math.round((progress.currentWordIndex / progress.totalWords) * 100)
         : 0;
@@ -31,7 +33,7 @@ export function DocumentCard({
         <GlassCard onPress={() => onPress(document)} style={styles.container}>
             <View style={styles.contentRow}>
                 {/* Icon */}
-                <View style={styles.iconBox}>
+                <View style={[styles.iconBox, { backgroundColor: theme.colors.background }]}>
                     <Ionicons
                         name="document-text"
                         size={24}
@@ -41,17 +43,19 @@ export function DocumentCard({
 
                 {/* Info */}
                 <View style={styles.info}>
-                    <Text style={styles.title} numberOfLines={1}>
+                    <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>
                         {document.name}
                     </Text>
                     <View style={styles.metaRow}>
-                        <Text style={styles.meta}>
+                        <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
                             {document.wordCount?.toLocaleString() ?? 0} words
                         </Text>
                         {progressPercentage > 0 && (
                             <>
-                                <Text style={styles.metaDot}>•</Text>
-                                <Text style={styles.metaHighlight}>{progressPercentage}% complete</Text>
+                                <Text style={[styles.metaDot, { color: theme.colors.textMuted }]}>•</Text>
+                                <Text style={[styles.metaHighlight, { color: theme.colors.primary }]}>
+                                    {progressPercentage}% complete
+                                </Text>
                             </>
                         )}
                     </View>
@@ -71,13 +75,12 @@ export function DocumentCard({
                 </Pressable>
             </View>
 
-            {/* Subtle Progress Bar (Bottom Border) */}
             {progressPercentage > 0 && (
-                <View style={styles.progressBar}>
+                <View style={[styles.progressBar, { backgroundColor: theme.colors.background }]}>
                     <View
                         style={[
                             styles.progressFill,
-                            { width: `${progressPercentage}%` }
+                            { width: `${progressPercentage}%`, backgroundColor: theme.colors.primary }
                         ]}
                     />
                 </View>
@@ -88,10 +91,10 @@ export function DocumentCard({
 
 const styles = StyleSheet.create({
     container: {
-        padding: theme.spacing.m,
-        marginBottom: theme.spacing.m,
-        overflow: 'hidden', // For progress bar
-        paddingBottom: theme.spacing.m + 4,
+        padding: 16,
+        marginBottom: 16,
+        overflow: 'hidden',
+        paddingBottom: 20,
     },
     contentRow: {
         flexDirection: 'row',
@@ -100,19 +103,17 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 48,
         height: 48,
-        borderRadius: theme.borderRadius.m,
-        backgroundColor: theme.colors.background,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: theme.spacing.m,
+        marginRight: 16,
     },
     info: {
         flex: 1,
     },
     title: {
-        fontSize: theme.typography.sizes.body,
-        fontWeight: theme.typography.weights.semibold as any,
-        color: theme.colors.text,
+        fontSize: 16,
+        fontWeight: '600',
         marginBottom: 2,
     },
     metaRow: {
@@ -120,21 +121,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     meta: {
-        fontSize: theme.typography.sizes.small,
-        color: theme.colors.textMuted,
+        fontSize: 12,
     },
     metaHighlight: {
-        fontSize: theme.typography.sizes.small,
-        color: theme.colors.primary,
+        fontSize: 12,
         fontWeight: '500',
     },
     metaDot: {
         marginHorizontal: 6,
         fontSize: 10,
-        color: theme.colors.textMuted,
     },
     deleteBtn: {
-        padding: theme.spacing.s,
+        padding: 8,
     },
     progressBar: {
         position: 'absolute',
@@ -142,11 +140,9 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 4,
-        backgroundColor: theme.colors.background,
     },
     progressFill: {
         height: '100%',
-        backgroundColor: theme.colors.primary,
         opacity: 0.8,
     },
 });

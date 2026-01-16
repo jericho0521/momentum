@@ -1,6 +1,6 @@
 /**
  * GlassCard Component
- * minimalist card with soft shadows and subtle lift
+ * Minimalist card with dynamic theme support
  */
 
 import React from 'react';
@@ -10,7 +10,7 @@ import Animated, {
     useSharedValue,
     withSpring
 } from 'react-native-reanimated';
-import { theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -27,6 +27,7 @@ export function GlassCard({
     onPress,
     variant = 'default'
 }: GlassCardProps) {
+    const { theme, isDark } = useTheme();
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -43,6 +44,20 @@ export function GlassCard({
 
     const Container = onPress ? AnimatedPressable : View;
 
+    const dynamicCardStyle = {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.l,
+        borderWidth: 1,
+        borderColor: isDark ? theme.colors.border : 'rgba(255,255,255,0.6)',
+        ...theme.shadows.soft,
+    };
+
+    const flatStyle = {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    };
+
     return (
         <Container
             onPress={onPress}
@@ -50,8 +65,8 @@ export function GlassCard({
             onPressOut={onPress ? handlePressOut : undefined}
             style={[
                 styles.card,
-                variant === 'default' && theme.shadows.soft,
-                variant === 'flat' && styles.flat,
+                dynamicCardStyle,
+                variant === 'flat' && flatStyle,
                 style,
                 onPress ? animatedStyle : null,
             ]}
@@ -63,15 +78,6 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.l,
-        padding: theme.spacing.l,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.6)',
-    },
-    flat: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        padding: 24,
     },
 });
