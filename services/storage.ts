@@ -104,6 +104,9 @@ const DEFAULT_SETTINGS: ReaderSettings = {
     fontSize: 48,
     highlightEnabled: true,
     focusPointEnabled: true,
+    naturalReadingEnabled: true,
+    periodDelay: 0.5,
+    commaDelay: 0.25,
 };
 
 export async function saveSettings(settings: ReaderSettings): Promise<void> {

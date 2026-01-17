@@ -22,6 +22,9 @@ export interface ReaderSettings {
     fontSize: number;
     highlightEnabled: boolean;
     focusPointEnabled: boolean;
+    naturalReadingEnabled: boolean;
+    periodDelay: number;  // multiplier for . ! ?
+    commaDelay: number;   // multiplier for , ; :
 }
 
 export interface Bookmark {
