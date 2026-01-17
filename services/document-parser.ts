@@ -3,7 +3,7 @@
  * Extracts text content from TXT, PDF, and EPUB files
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import type { Document } from '@/types';
 
@@ -48,7 +48,7 @@ async function parseTxtFile(uri: string): Promise<string> {
     }
 }
 
-// Load PDF.js from CDN at runtime (avoids Metro bundling issues)
+// Load PDF.js from local assets (offline-capable)
 async function loadPdfJs(): Promise<any> {
     // Check if already loaded
     if ((window as any).pdfjsLib) {
@@ -57,13 +57,16 @@ async function loadPdfJs(): Promise<any> {
 
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        // Load from public folder (served at root URL for web)
+        script.src = '/pdfjs/pdf.min.js';
         script.onload = () => {
             const pdfjsLib = (window as any).pdfjsLib;
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            // Worker also loaded from public folder
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.js';
+            console.log('PDF.js loaded from local assets');
             resolve(pdfjsLib);
         };
-        script.onerror = () => reject(new Error('Failed to load PDF.js'));
+        script.onerror = () => reject(new Error('Failed to load PDF.js from local assets'));
         document.head.appendChild(script);
     });
 }
@@ -73,7 +76,7 @@ async function parsePdfFile(uri: string): Promise<string> {
         console.log('Parsing PDF:', uri);
 
         if (Platform.OS === 'web') {
-            // Load PDF.js from CDN
+            // Load PDF.js from local assets
             const pdfjsLib = await loadPdfJs();
 
             // Fetch the PDF file
