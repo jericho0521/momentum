@@ -22,6 +22,9 @@ export class RSVPEngine {
     private isPlaying: boolean = false;
     private timerId: NodeJS.Timeout | null = null;
     private onStateChange: RSVPCallback | null = null;
+    private naturalReadingEnabled: boolean = true;
+    private periodDelay: number = 0.5;
+    private commaDelay: number = 0.25;
 
     constructor(onStateChange?: RSVPCallback) {
         this.onStateChange = onStateChange ?? null;
@@ -90,6 +93,15 @@ export class RSVPEngine {
         return this.wpm;
     }
 
+    setNaturalReading(enabled: boolean): void {
+        this.naturalReadingEnabled = enabled;
+    }
+
+    setDelays(periodDelay: number, commaDelay: number): void {
+        this.periodDelay = periodDelay;
+        this.commaDelay = commaDelay;
+    }
+
     getCurrentIndex(): number {
         return this.currentIndex;
     }
@@ -137,11 +149,14 @@ export class RSVPEngine {
     private calculateDelay(word: string): number {
         const baseDelay = (60 / this.wpm) * 1000;
 
+        // Skip natural reading adjustments if disabled
+        if (!this.naturalReadingEnabled) return baseDelay;
+
         // Add extra time for longer words or punctuation
         let multiplier = 1;
         if (word.length > 8) multiplier += 0.2;
-        if (/[.!?]$/.test(word)) multiplier += 0.5;
-        if (/[,;:]$/.test(word)) multiplier += 0.25;
+        if (/[.!?]$/.test(word)) multiplier += this.periodDelay;
+        if (/[,;:]$/.test(word)) multiplier += this.commaDelay;
 
         return baseDelay * multiplier;
     }

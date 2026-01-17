@@ -17,6 +17,7 @@ interface UseSpeedReaderOptions {
 
 export function useSpeedReader({ documentId, content, onComplete }: UseSpeedReaderOptions) {
     const engineRef = useRef<RSVPEngine | null>(null);
+    const settingsRef = useRef<ReaderSettings | null>(null);
     const [settings, setSettings] = useState<ReaderSettings | null>(null);
     const [state, setState] = useState<RSVPState>({
         currentWord: '',
@@ -28,13 +29,20 @@ export function useSpeedReader({ documentId, content, onComplete }: UseSpeedRead
         isPlaying: false,
     });
 
+    // Keep settingsRef in sync with settings state
+    useEffect(() => {
+        settingsRef.current = settings;
+    }, [settings]);
+
     // Reload settings from storage (call when screen gains focus)
     const reloadSettings = useCallback(async () => {
         const loadedSettings = await getSettings();
         setSettings(loadedSettings);
         if (engineRef.current) {
             engineRef.current.setWpm(loadedSettings.wpm);
-            console.log('Settings reloaded, WPM:', loadedSettings.wpm);
+            engineRef.current.setNaturalReading(loadedSettings.naturalReadingEnabled);
+            engineRef.current.setDelays(loadedSettings.periodDelay, loadedSettings.commaDelay);
+            console.log('Settings reloaded, WPM:', loadedSettings.wpm, 'Natural reading:', loadedSettings.naturalReadingEnabled);
         }
     }, []);
 
@@ -43,15 +51,20 @@ export function useSpeedReader({ documentId, content, onComplete }: UseSpeedRead
         const init = async () => {
             const loadedSettings = await getSettings();
             setSettings(loadedSettings);
+            settingsRef.current = loadedSettings;
 
             const engine = new RSVPEngine((newState) => {
                 setState(newState);
-                if (loadedSettings.highlightEnabled && newState.isPlaying) {
+                // Use settingsRef to get current value, not stale closure
+                if (settingsRef.current?.highlightEnabled && newState.isPlaying) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
             });
 
             engine.setWpm(loadedSettings.wpm);
+            engine.setNaturalReading(loadedSettings.naturalReadingEnabled);
+            engine.setDelays(loadedSettings.periodDelay, loadedSettings.commaDelay);
+            console.log('Engine init, Natural reading:', loadedSettings.naturalReadingEnabled);
             engine.loadContent(content);
 
             const savedProgress = await getProgress(documentId);

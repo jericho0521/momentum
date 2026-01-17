@@ -172,6 +172,58 @@ export default function SettingsScreen() {
                             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                         />
                     </View>
+
+                    <View style={[styles.row, { borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
+                        <View>
+                            <Text style={[styles.label, { color: theme.colors.text }]}>Natural Reading</Text>
+                            <Text style={[styles.labelSub, { color: theme.colors.textMuted }]}>Pause on punctuation</Text>
+                        </View>
+                        <Switch
+                            value={settings.naturalReadingEnabled}
+                            onValueChange={(v) => updateSetting('naturalReadingEnabled', v)}
+                            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                        />
+                    </View>
+
+                    {settings.naturalReadingEnabled && (
+                        <>
+                            <View style={[styles.sliderRow, { borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
+                                <View style={styles.sliderHeader}>
+                                    <Text style={[styles.label, { color: theme.colors.text }]}>Period Delay</Text>
+                                    <Text style={[styles.valueDisplay, { color: theme.colors.textSecondary }]}>+{Math.round(settings.periodDelay * 100)}%</Text>
+                                </View>
+                                <Slider
+                                    style={styles.slider}
+                                    minimumValue={0}
+                                    maximumValue={2}
+                                    step={0.1}
+                                    value={settings.periodDelay}
+                                    onSlidingComplete={(v) => updateSetting('periodDelay', v)}
+                                    minimumTrackTintColor={theme.colors.primary}
+                                    maximumTrackTintColor={theme.colors.border}
+                                    thumbTintColor={theme.colors.primary}
+                                />
+                            </View>
+
+                            <View style={[styles.sliderRow, { borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
+                                <View style={styles.sliderHeader}>
+                                    <Text style={[styles.label, { color: theme.colors.text }]}>Comma Delay</Text>
+                                    <Text style={[styles.valueDisplay, { color: theme.colors.textSecondary }]}>+{Math.round(settings.commaDelay * 100)}%</Text>
+                                </View>
+                                <Slider
+                                    style={styles.slider}
+                                    minimumValue={0}
+                                    maximumValue={2}
+                                    step={0.1}
+                                    value={settings.commaDelay}
+                                    onSlidingComplete={(v) => updateSetting('commaDelay', v)}
+                                    minimumTrackTintColor={theme.colors.primary}
+                                    maximumTrackTintColor={theme.colors.border}
+                                    thumbTintColor={theme.colors.primary}
+                                />
+                            </View>
+                        </>
+                    )}
                 </GlassCard>
 
                 {/* Data */}
@@ -266,6 +318,15 @@ const styles = StyleSheet.create({
     labelSub: {
         fontSize: 12,
         marginTop: 2,
+    },
+    sliderRow: {
+        paddingVertical: 16,
+    },
+    sliderHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
     },
     version: {
         textAlign: 'center',
